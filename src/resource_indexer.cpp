@@ -1,6 +1,6 @@
-#include "../include/resource_indexer.h"
+#include "resource_indexer.h"
 
-namespace resource_management {
+namespace resource {
 
 ResourceIndexer::ResourceIndexer(ResourceRegistry& registry)
     : registry_(registry) {
@@ -78,4 +78,4 @@ void ResourceIndexer::buildIndices() {
     }
 }
 
-} // namespace resource_management
+} // namespace resource

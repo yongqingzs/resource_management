@@ -1,10 +1,8 @@
-#include "../include/resource_node.h"
-#include "../include/resource_registry.h"
-#include "../include/resource_indexer.h"
+#include "resource_api.h"
 #include <iostream>
 #include <string>
 
-using namespace resource_management;
+using namespace resource;
 
 int main() {
     // 创建资源注册表和索引器

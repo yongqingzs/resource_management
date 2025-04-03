@@ -6,8 +6,9 @@
 #include <unordered_map>
 #include <functional>
 #include <typeinfo>
+#include <iostream>
 
-namespace resource_management {
+namespace resource {
 
 // 抽象的属性值基类，用于类型擦除
 class AttributeValue {
@@ -59,6 +60,24 @@ public:
     // 属性管理 - 允许节点存储任意类型的属性
     template<typename T>
     void setAttribute(const std::string& key, const T& value) {
+        attributes_[key] = std::unique_ptr<AttributeValue>(new TypedAttributeValue<T>(value));
+    }
+
+    template<typename T>
+    void modifyAttribute(const std::string& key, const T& value) {
+        // 检查属性是否存在
+        auto it = attributes_.find(key);
+        if (it == attributes_.end()) {
+            throw std::runtime_error("Attribute not found: " + key);
+        }
+        
+        // 检查类型是否匹配
+        auto* typedValue = dynamic_cast<TypedAttributeValue<T>*>(it->second.get());
+        if (!typedValue) {
+            throw std::bad_cast();
+        }
+        
+        // 类型匹配，创建新的属性值替换旧值
         attributes_[key] = std::unique_ptr<AttributeValue>(new TypedAttributeValue<T>(value));
     }
     
@@ -119,4 +138,6 @@ private:
     std::unordered_map<std::string, std::unique_ptr<AttributeValue>> attributes_;
 };
 
-} // namespace resource_management
+void simple_visitor(const std::shared_ptr<ResourceNode>& node, int depth);
+
+} // namespace resource

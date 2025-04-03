@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <functional>
 
-namespace resource_management {
+namespace resource {
 
 class ResourceRegistry {
 public:
@@ -47,6 +47,8 @@ public:
         });
     }
     
+    void traverse(const std::function<void(const std::shared_ptr<ResourceNode>&, int depth)>& visitor) const;
+    
     // 清空注册表
     void clear();
 
@@ -61,4 +63,4 @@ private:
         std::vector<std::shared_ptr<ResourceNode>>& results) const;
 };
 
-} // namespace resource_management
+} // namespace resource

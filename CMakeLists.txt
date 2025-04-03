@@ -28,5 +28,15 @@ set(SOURCES
   src/resource_registry.cpp
 )
 
+set(LIB_SOURCES
+  src/resource_indexer.cpp
+  src/resource_node.cpp
+  src/resource_registry.cpp
+)
+
 # 创建主可执行文件
 add_executable(resource_demo ${SOURCES})
+
+add_executable(test_ResourceNode test/test_ResourceNode.cpp ${LIB_SOURCES})
+
+add_executable(test_ResourceRegistry test/test_ResourceRegistry.cpp ${LIB_SOURCES})

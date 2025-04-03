@@ -1,8 +1,8 @@
-#include "../include/resource_registry.h"
+#include "resource_registry.h"
 #include <sstream>
 #include <stdexcept>
 
-namespace resource_management {
+namespace resource {
 
 ResourceRegistry::ResourceRegistry() {}
 
@@ -64,6 +64,7 @@ std::shared_ptr<ResourceNode> ResourceRegistry::getNodeByPath(const std::string&
     // 找到根节点
     auto currentNode = getRootNode(parts[0]);
     if (!currentNode) {
+        // std::cout << "getNodeByPath: can't find path!" << std::endl;
         return nullptr;
     }
     
@@ -71,6 +72,7 @@ std::shared_ptr<ResourceNode> ResourceRegistry::getNodeByPath(const std::string&
     for (size_t i = 1; i < parts.size(); ++i) {
         currentNode = currentNode->getChild(parts[i]);
         if (!currentNode) {
+            // std::cout << "getNodeByPath: can't find path!" << std::endl;
             return nullptr;
         }
     }
@@ -203,8 +205,16 @@ void ResourceRegistry::collectNodes(
     }
 }
 
+void ResourceRegistry::traverse(const std::function<void(const std::shared_ptr<ResourceNode>&, int depth)>& visitor) const {
+    // 首先访问每个根节点
+    for (const auto& pair : rootNodes_) {
+        // 从深度0开始递归遍历每个根节点的子树
+        pair.second->traverse(visitor);
+    }
+}
+
 void ResourceRegistry::clear() {
     rootNodes_.clear();
 }
 
-} // namespace resource_management
+} // namespace resource

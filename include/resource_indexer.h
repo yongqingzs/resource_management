@@ -7,7 +7,7 @@
 #include <mutex>
 #include <string>
 
-namespace resource_management {
+namespace resource {
 
 class ResourceIndexer {
 public:
@@ -46,4 +46,4 @@ private:
     void buildIndices();
 };
 
-} // namespace resource_management
+} // namespace resource

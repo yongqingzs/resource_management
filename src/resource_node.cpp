@@ -1,8 +1,8 @@
-#include "../include/resource_node.h"
+#include "resource_node.h"
 #include <algorithm>
 #include <stdexcept>
 
-namespace resource_management {
+namespace resource {
 
 ResourceNode::ResourceNode(const std::string& name, const std::string& id)
     : name_(name), id_(id) {}
@@ -97,4 +97,41 @@ void ResourceNode::traverse(const std::function<void(const std::shared_ptr<Resou
     }
 }
 
-} // namespace resource_management
+void simple_visitor(const std::shared_ptr<ResourceNode>& node, int depth) {
+    std::string indent(depth * 2, ' ');
+    std::cout << indent << "- " << node->getName() << " (ID: " << node->getId() << ")" << std::endl;
+    
+    // 打印节点属性
+    auto keys = node->getAttributeKeys();
+    if (!keys.empty()) {
+        std::string attrIndent(depth * 2 + 2, ' ');
+        std::cout << attrIndent << "属性:" << std::endl;
+        for (const auto& key : keys) {
+            std::cout << attrIndent << "  " << key << ": ";
+            
+            // 尝试输出常见类型的属性值
+            try {
+                if (node->getAttributeType(key) == typeid(int)) {
+                    std::cout << node->getAttribute<int>(key);
+                }
+                else if (node->getAttributeType(key) == typeid(double)) {
+                    std::cout << node->getAttribute<double>(key);
+                }
+                else if (node->getAttributeType(key) == typeid(std::string)) {
+                    std::cout << node->getAttribute<std::string>(key);
+                }
+                else if (node->getAttributeType(key) == typeid(bool)) {
+                    std::cout << (node->getAttribute<bool>(key) ? "true" : "false");
+                }
+                else {
+                    std::cout << "[复杂类型]";
+                }
+            } catch (...) {
+                std::cout << "[错误:无法读取]";
+            }
+            std::cout << std::endl;
+        }
+    }
+}
+
+} // namespace resource

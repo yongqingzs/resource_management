@@ -25,7 +25,16 @@ std::vector<std::shared_ptr<ResourceNode>> ResourceIndexer::findById(const std::
 
 std::vector<std::shared_ptr<ResourceNode>> ResourceIndexer::findByPredicate(
     const std::function<bool(const std::shared_ptr<ResourceNode>&)>& predicate) {
-    return registry_.findNodes(predicate);
+    std::vector<std::shared_ptr<ResourceNode>> results;
+
+    // 通过注册表的遍历函数收集符合条件的节点
+    registry_.traverseNodes([&](std::shared_ptr<ResourceNode> node) {
+        if (predicate(node)) {
+            results.push_back(node);
+        }
+    });
+    
+    return results;
 }
 
 std::vector<std::shared_ptr<ResourceNode>> ResourceIndexer::findByMultiConditions(
@@ -36,7 +45,8 @@ std::vector<std::shared_ptr<ResourceNode>> ResourceIndexer::findByMultiCondition
         return std::vector<std::shared_ptr<ResourceNode>>();
     }
     
-    return registry_.findNodes([&](const std::shared_ptr<ResourceNode>& node) -> bool {
+    // 创建一个新的谓词函数，根据matchAll参数决定条件如何组合
+    auto combinedPredicate = [&conditions, matchAll](const std::shared_ptr<ResourceNode>& node) -> bool {
         if (matchAll) {
             // 所有条件必须满足
             for (const auto& condition : conditions) {
@@ -54,7 +64,10 @@ std::vector<std::shared_ptr<ResourceNode>> ResourceIndexer::findByMultiCondition
             }
             return false;
         }
-    });
+    };
+    
+    // 使用已有的findByPredicate方法，保持一致性
+    return findByPredicate(combinedPredicate);
 }
 
 void ResourceIndexer::refreshIndex() {

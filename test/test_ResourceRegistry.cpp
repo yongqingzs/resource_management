@@ -94,7 +94,7 @@ int main()
     if (node_ptr)
     {
         std::cout << "创建成功" << std::endl;
-        registry.traverse(simple_visitor);
+        registry.traverseRootNode(simple_visitor);
     }
     else
     {

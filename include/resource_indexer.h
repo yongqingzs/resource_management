@@ -11,38 +11,41 @@ namespace resource {
 
 class ResourceIndexer {
 public:
-    ResourceIndexer(ResourceRegistry& registry);
+    explicit ResourceIndexer(ResourceRegistry& registry);
     
-    // 基本查找功能
+    // 基本查询功能
     std::vector<std::shared_ptr<ResourceNode>> findByName(const std::string& name);
     std::vector<std::shared_ptr<ResourceNode>> findById(const std::string& id);
     
-    // 高级查询
+    // 高级查询功能
     std::vector<std::shared_ptr<ResourceNode>> findByPredicate(
         const std::function<bool(const std::shared_ptr<ResourceNode>&)>& predicate);
     
-    // 属性查询
     template<typename T>
     std::vector<std::shared_ptr<ResourceNode>> findByAttribute(const std::string& attrName, const T& value) {
-        return registry_.findNodesByAttribute<T>(attrName, value);
+        return findByPredicate([&](const std::shared_ptr<ResourceNode>& node) -> bool {
+            if (!node->hasAttribute(attrName)) return false;
+            
+            try {
+                return node->getAttribute<T>(attrName) == value;
+            } catch (...) {
+                return false;
+            }
+        });
     }
     
-    // 多条件查询
     std::vector<std::shared_ptr<ResourceNode>> findByMultiConditions(
         const std::vector<std::function<bool(const std::shared_ptr<ResourceNode>&)>>& conditions,
         bool matchAll = true);
     
-    // 刷新索引缓存
+    // 索引维护
     void refreshIndex();
     
 private:
     ResourceRegistry& registry_;
-    
-    // 索引缓存
     std::unordered_map<std::string, std::vector<std::shared_ptr<ResourceNode>>> nameIndex_;
     std::unordered_map<std::string, std::shared_ptr<ResourceNode>> idIndex_;
     
-    // 构建索引
     void buildIndices();
 };
 

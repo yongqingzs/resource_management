@@ -25,30 +25,12 @@ public:
     // 支持创建整个路径
     std::shared_ptr<ResourceNode> createPath(const std::string& path);
     
-    // 高级查询功能
-    std::vector<std::shared_ptr<ResourceNode>> findNodes(
-        const std::function<bool(const std::shared_ptr<ResourceNode>&)>& predicate) const;
+    // 遍历根节点
+    void traverseRootNode(const std::function<void(const std::shared_ptr<ResourceNode>&, int depth)>& visitor) const;
     
-    // 通过属性查询节点 - 模板函数
-    template<typename T>
-    std::vector<std::shared_ptr<ResourceNode>> findNodesByAttribute(
-        const std::string& attrName, const T& attrValue) const {
-        
-        return findNodes([&](const std::shared_ptr<ResourceNode>& node) -> bool {
-            if (!node->hasAttribute(attrName)) return false;
-            
-            try {
-                return node->getAttribute<T>(attrName) == attrValue;
-            } catch (const std::bad_cast&) {
-                return false;
-            } catch (const std::runtime_error&) {
-                return false;
-            }
-        });
-    }
-    
-    void traverse(const std::function<void(const std::shared_ptr<ResourceNode>&, int depth)>& visitor) const;
-    
+    // 基础遍历功能 - 仅供内部和ResourceIndexer使用
+    void traverseNodes(const std::function<void(std::shared_ptr<ResourceNode>)>& callback) const;
+
     // 清空注册表
     void clear();
 
@@ -56,11 +38,7 @@ private:
     std::unordered_map<std::string, std::shared_ptr<ResourceNode>> rootNodes_;
     
     std::vector<std::string> splitPath(const std::string& path) const;
-    
-    void collectNodes(
-        std::shared_ptr<ResourceNode> node,
-        const std::function<bool(const std::shared_ptr<ResourceNode>&)>& predicate,
-        std::vector<std::shared_ptr<ResourceNode>>& results) const;
+
 };
 
 } // namespace resource

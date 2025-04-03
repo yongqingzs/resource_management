@@ -176,40 +176,30 @@ std::shared_ptr<ResourceNode> ResourceRegistry::createPath(const std::string& pa
     return currentNode;
 }
 
-std::vector<std::shared_ptr<ResourceNode>> ResourceRegistry::findNodes(
-    const std::function<bool(const std::shared_ptr<ResourceNode>&)>& predicate) const {
-    
-    std::vector<std::shared_ptr<ResourceNode>> results;
-    
-    // 对每个根节点进行搜索
-    for (const auto& pair : rootNodes_) {
-        collectNodes(pair.second, predicate, results);
-    }
-    
-    return results;
-}
-
-void ResourceRegistry::collectNodes(
-    std::shared_ptr<ResourceNode> node,
-    const std::function<bool(const std::shared_ptr<ResourceNode>&)>& predicate,
-    std::vector<std::shared_ptr<ResourceNode>>& results) const {
-    
-    // 检查当前节点是否满足条件
-    if (predicate(node)) {
-        results.push_back(node);
-    }
-    
-    // 递归检查所有子节点
-    for (const auto& child : node->getChildren()) {
-        collectNodes(child, predicate, results);
-    }
-}
-
-void ResourceRegistry::traverse(const std::function<void(const std::shared_ptr<ResourceNode>&, int depth)>& visitor) const {
+void ResourceRegistry::traverseRootNode(const std::function<void(const std::shared_ptr<ResourceNode>&, int depth)>& visitor) const {
     // 首先访问每个根节点
     for (const auto& pair : rootNodes_) {
         // 从深度0开始递归遍历每个根节点的子树
         pair.second->traverse(visitor);
+    }
+}
+
+void ResourceRegistry::traverseNodes(const std::function<void(std::shared_ptr<ResourceNode>)>& callback) const {
+    // 定义内部递归函数
+    std::function<void(std::shared_ptr<ResourceNode>)> traverse = 
+    [&callback, &traverse](std::shared_ptr<ResourceNode> node) {
+        // 处理当前节点
+        callback(node);
+        
+        // 递归处理所有子节点
+        for (const auto& child : node->getChildren()) {
+            traverse(child);
+        }
+    };
+    
+    // 从所有根节点开始遍历
+    for (const auto& pair : rootNodes_) {
+        traverse(pair.second);
     }
 }
 

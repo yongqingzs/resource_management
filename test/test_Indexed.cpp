@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <chrono>
+#include <unordered_set>
 
 using namespace resource;
 using namespace std::chrono;
@@ -11,7 +12,14 @@ void printResults(const std::string& queryTitle, const std::vector<std::shared_p
     std::cout << "\n=== " << queryTitle << " ===" << std::endl;
     std::cout << "找到 " << results.size() << " 个结果:" << std::endl;
     
+    // 只打印前5个结果，避免输出太多
+    int count = 0;
     for (const auto& node : results) {
+        if (count++ >= 5) {
+            std::cout << "... 以及 " << (results.size() - 5) << " 个更多结果" << std::endl;
+            break;
+        }
+        
         std::cout << "- " << node->getName() << " (ID: " << node->getId() << ")" << std::endl;
         
         // 打印节点的属性
@@ -57,8 +65,8 @@ int main() {
     ResourceRegistry registry;
     ResourceIndexer indexer(registry);
     
-    std::cout << "=== 资源索引哈希表示例 ===" << std::endl;
-    std::cout << "本示例演示哈希表索引如何加速属性查询" << std::endl;
+    std::cout << "=== 资源索引示例 ===" << std::endl;
+    std::cout << "本示例演示索引如何加速属性查询，包括精确匹配和范围查询" << std::endl;
     
     // 创建弹群结构
     auto group = std::make_shared<ResourceNode>("导弹集群", "missile-group");
@@ -192,101 +200,108 @@ int main() {
     double speedup3 = static_cast<double>(normalTime3) / indexedTime3;
     std::cout << "性能提升: " << speedup3 << " 倍" << std::endl;
     
-    // 测试4: 检查不存在的属性
-    std::cout << "\n测试4: 查询具有'特殊标记'属性的导弹(该属性不存在)" << std::endl;
+    // 测试4: 范围查询 - 射程大于400公里的导弹
+    std::cout << "\n测试4: 范围查询 - 射程大于400公里的导弹" << std::endl;
     
-    // 哈希查询
-    auto specialMarkedMissiles = indexer.findByAttributeIndexed<bool>("特殊标记", true);
-    std::cout << "哈希查询找到 " << specialMarkedMissiles.size() << " 个结果" << std::endl;
+    // 遍历查询
+    long long normalTime4 = measureTime([&]() {
+        auto result = indexer.findByPredicate([](const std::shared_ptr<ResourceNode>& node) {
+            if (!node->hasAttribute("射程")) return false;
+            try {
+                double range = node->getAttribute<double>("射程");
+                return range > 400.0;
+            } catch (...) {
+                return false;
+            }
+        });
+        std::cout << "遍历查询找到 " << result.size() << " 个结果" << std::endl;
+    });
+    std::cout << "遍历查询耗时: " << normalTime4 << " 微秒" << std::endl;
     
-    // 测试5: 动态添加新节点后的索引更新
-    std::cout << "\n测试5: 添加新节点并测试索引更新机制" << std::endl;
+    // 创建索引
+    std::cout << "创建射程属性索引..." << std::endl;
+    indexer.createAttributeIndex<double>("射程");
     
-    // 添加一个新的导弹节点
-    auto newMissile = std::make_shared<ResourceNode>("新型高超音速导弹", "hypersonic-1");
-    newMissile->setAttribute("类型", "高超音速导弹");
-    newMissile->setAttribute("导引头", "复合型");
-    newMissile->setAttribute("燃料", "特种燃料");
-    newMissile->setAttribute("速度", 10.0);
-    newMissile->setAttribute("已部署", true);
+    // 范围查询
+    long long indexedTime4 = measureTime([&]() {
+        auto result = indexer.findGreaterThan<double>("射程", 400.0);
+        std::cout << "范围哈希查询找到 " << result.size() << " 个结果" << std::endl;
+    });
+    std::cout << "范围哈希查询耗时: " << indexedTime4 << " 微秒" << std::endl;
     
-    group->addChild(newMissile);
+    // 计算加速比
+    double speedup4 = static_cast<double>(normalTime4) / indexedTime4;
+    std::cout << "性能提升: " << speedup4 << " 倍" << std::endl;
     
-    std::cout << "添加了一个新型高超音速导弹，但尚未刷新索引" << std::endl;
+    // 打印一些结果
+    auto highRangeMissiles = indexer.findGreaterThan<double>("射程", 400.0);
+    printResults("射程>400公里的导弹(前5个)", highRangeMissiles);
     
-    // 在刷新索引前查询
-    auto hypersonicBefore = indexer.findByAttributeIndexed<std::string>("类型", "高超音速导弹");
-    std::cout << "刷新索引前查询高超音速导弹: 找到 " << hypersonicBefore.size() << " 个结果" << std::endl;
+    // 测试5: 范围查询 - 速度小于3.5马赫的导弹
+    std::cout << "\n测试5: 范围查询 - 速度小于3.5马赫的导弹" << std::endl;
     
-    // 刷新索引
-    std::cout << "刷新索引..." << std::endl;
-    indexer.refreshIndex();
+    // 遍历查询
+    long long normalTime5 = measureTime([&]() {
+        auto result = indexer.findByPredicate([](const std::shared_ptr<ResourceNode>& node) {
+            if (!node->hasAttribute("速度")) return false;
+            try {
+                double speed = node->getAttribute<double>("速度");
+                return speed < 3.5;
+            } catch (...) {
+                return false;
+            }
+        });
+        std::cout << "遍历查询找到 " << result.size() << " 个结果" << std::endl;
+    });
+    std::cout << "遍历查询耗时: " << normalTime5 << " 微秒" << std::endl;
     
-    // 必须重新创建索引，因为刷新会清空所有索引
-    indexer.createAttributeIndex<std::string>("类型");
+    // 创建索引
+    std::cout << "创建速度属性索引..." << std::endl;
+    indexer.createAttributeIndex<double>("速度");
     
-    // 在刷新索引后查询
-    auto hypersonicAfter = indexer.findByAttributeIndexed<std::string>("类型", "高超音速导弹");
-    std::cout << "刷新索引后查询高超音速导弹: 找到 " << hypersonicAfter.size() << " 个结果" << std::endl;
+    // 范围查询
+    long long indexedTime5 = measureTime([&]() {
+        auto result = indexer.findLessThan<double>("速度", 3.5);
+        std::cout << "范围哈希查询找到 " << result.size() << " 个结果" << std::endl;
+    });
+    std::cout << "范围哈希查询耗时: " << indexedTime5 << " 微秒" << std::endl;
     
-    if (!hypersonicAfter.empty()) {
-        printResults("新添加的高超音速导弹信息", hypersonicAfter);
-    }
+    // 计算加速比
+    double speedup5 = static_cast<double>(normalTime5) / indexedTime5;
+    std::cout << "性能提升: " << speedup5 << " 倍" << std::endl;
     
-    // // 测试6: 实际使用场景 - 查找所有高射程、高速度的导弹
-    // std::cout << "\n测试6: 实际使用场景 - 查找所有射程>=400公里且速度>=4.0马赫的导弹" << std::endl;
+    // 测试6: 范围查询 - 重量在1000-2000公斤之间的导弹
+    std::cout << "\n测试6: 范围查询 - 重量在1000-2000公斤之间的导弹" << std::endl;
     
-    // // 创建射程和速度索引
-    // indexer.createAttributeIndex<double>("射程");
-    // indexer.createAttributeIndex<double>("速度");
+    // 遍历查询
+    long long normalTime6 = measureTime([&]() {
+        auto result = indexer.findByPredicate([](const std::shared_ptr<ResourceNode>& node) {
+            if (!node->hasAttribute("重量")) return false;
+            try {
+                int weight = node->getAttribute<int>("重量");
+                return weight >= 1000 && weight <= 2000;
+            } catch (...) {
+                return false;
+            }
+        });
+        std::cout << "遍历查询找到 " << result.size() << " 个结果" << std::endl;
+    });
+    std::cout << "遍历查询耗时: " << normalTime6 << " 微秒" << std::endl;
     
-    // // 组装查询结果 - 演示如何组合多个哈希查询结果
-    // auto highRangeMissiles = indexer.findByAttributeIndexed<double>("射程", 400.0);
-    // auto highRangeMissiles2 = indexer.findByAttributeIndexed<double>("射程", 450.0);
-    // auto highRangeMissiles3 = indexer.findByAttributeIndexed<double>("射程", 500.0);
-    // auto highRangeMissiles4 = indexer.findByAttributeIndexed<double>("射程", 550.0);
+    // 创建索引
+    std::cout << "创建重量属性索引..." << std::endl;
+    indexer.createAttributeIndex<int>("重量");
     
-    // auto highSpeedMissiles = indexer.findByAttributeIndexed<double>("速度", 4.0);
-    // auto highSpeedMissiles2 = indexer.findByAttributeIndexed<double>("速度", 4.5);
-    // auto highSpeedMissiles3 = indexer.findByAttributeIndexed<double>("速度", 5.0);
+    // 范围查询
+    long long indexedTime6 = measureTime([&]() {
+        auto result = indexer.findInRange<int>("重量", 1000, 2000);
+        std::cout << "范围哈希查询找到 " << result.size() << " 个结果" << std::endl;
+    });
+    std::cout << "范围哈希查询耗时: " << indexedTime6 << " 微秒" << std::endl;
     
-    // // 合并所有高射程导弹
-    // std::unordered_set<std::shared_ptr<ResourceNode>> highRangeSet;
-    // for (const auto& missile : highRangeMissiles) highRangeSet.insert(missile);
-    // for (const auto& missile : highRangeMissiles2) highRangeSet.insert(missile);
-    // for (const auto& missile : highRangeMissiles3) highRangeSet.insert(missile);
-    // for (const auto& missile : highRangeMissiles4) highRangeSet.insert(missile);
-    
-    // // 合并所有高速度导弹
-    // std::unordered_set<std::shared_ptr<ResourceNode>> highSpeedSet;
-    // for (const auto& missile : highSpeedMissiles) highSpeedSet.insert(missile);
-    // for (const auto& missile : highSpeedMissiles2) highSpeedSet.insert(missile);
-    // for (const auto& missile : highSpeedMissiles3) highSpeedSet.insert(missile);
-    
-    // // 找出两个集合的交集
-    // std::vector<std::shared_ptr<ResourceNode>> highPerformanceMissiles;
-    // for (const auto& missile : highRangeSet) {
-    //     if (highSpeedSet.count(missile) > 0) {
-    //         highPerformanceMissiles.push_back(missile);
-    //     }
-    // }
-    
-    // std::cout << "找到 " << highPerformanceMissiles.size() << " 个高性能导弹" << std::endl;
-    
-    // // 显示前5个结果
-    // int count = 0;
-    // std::vector<std::shared_ptr<ResourceNode>> topResults;
-    // for (const auto& missile : highPerformanceMissiles) {
-    //     if (count++ < 5) {
-    //         topResults.push_back(missile);
-    //     }
-    // }
-    // printResults("高性能导弹(前5个)", topResults);
-    
-    // std::cout << "\n=== 索引哈希表测试总结 ===" << std::endl;
-    // std::cout << "1. 哈希表索引在查询大量数据时能显著提升性能" << std::endl;
-    // std::cout << "2. 索引需要在数据变更后刷新才能保持最新状态" << std::endl;
-    // std::cout << "3. 可以组合多个哈希查询结果实现复杂查询" << std::endl;
+    // 计算加速比
+    double speedup6 = static_cast<double>(normalTime6) / indexedTime6;
+    std::cout << "性能提升: " << speedup6 << " 倍" << std::endl;
     
     return 0;
 }

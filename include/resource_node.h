@@ -63,6 +63,11 @@ public:
         attributes_[key] = std::unique_ptr<AttributeValue>(new TypedAttributeValue<T>(value));
     }
 
+    void setAttribute(const std::string& key, const char* value) {
+        // 将 const char* 转换为 std::string 后存储
+        setAttribute<std::string>(key, std::string(value));
+    }
+
     template<typename T>
     void modifyAttribute(const std::string& key, const T& value) {
         // 检查属性是否存在

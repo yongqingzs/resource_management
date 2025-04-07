@@ -43,15 +43,23 @@ int main()
     std::cout << "\n=== 资源树结构 ===" << std::endl;
     group1->traverse(simple_visitor);
 
-    std::cout << "\n=== 属性添加 ===" << std::endl;
+    std::cout << "\n=== 节点添加(添加弹13) ===" << std::endl;
+    cluster2->addChild(std::make_shared<ResourceNode>("弹13", "m2-7"));
+    group1->traverse(simple_visitor);
+
+    std::cout << "\n=== 属性添加(添加弹8目标) ===" << std::endl;
     missile2_2->setAttribute("目标", std::string("Berkeley1"));
     group1->traverse(simple_visitor);
 
-    std::cout << "\n=== 属性修改 ===" << std::endl;
+    std::cout << "\n=== 属性修改(修改弹8目标) ===" << std::endl;
     missile2_2->modifyAttribute("目标", std::string("YorkCity1"));
     group1->traverse(simple_visitor);
 
-    std::cout << "\n=== 节点删除 ===" << std::endl;  // 注意只针对child节点
+    std::cout << "\n=== 属性删除(删除弹8目标) ===" << std::endl;
+    missile2_2->removeAttribute("目标");
+    group1->traverse(simple_visitor);
+
+    std::cout << "\n=== 节点删除（删除弹簇1） ===" << std::endl;  // 注意只针对child节点
     group1->removeChild("cluster001");
     group1->traverse(simple_visitor);
 }

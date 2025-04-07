@@ -43,14 +43,17 @@ int main()
     cluster2->addChild(missile2_6);
 
     registry.registerRootNode(group1);
-    group1->traverse(simple_visitor);
+    // group1->traverse(simple_visitor);
+    std::cout << "\n=== 资源树结构 ===" << std::endl;
+    registry.traverseRootNode(simple_visitor);
+
     std::shared_ptr<resource::ResourceNode> node_ptr;
     bool result_flag = false;
-    std::cout << "\n=== 通过路径获取节点 ===" << std::endl;
+    std::cout << "\n=== 通过路径获取节点(group001/cluster002/m2-6) ===" << std::endl;
     node_ptr = registry.getNodeByPath("group001/cluster002/m2-6");
     node_ptr->traverse(simple_visitor);
 
-    std::cout << "\n=== 通过路径获取节点(错误) ===" << std::endl;
+    std::cout << "\n=== 通过路径获取节点(错误路径 group001/cluster002/m2-7) ===" << std::endl;
     if (registry.getNodeByPath("group001/cluster002/m2-7") == nullptr)
     {
         std::cout << "没有找到该节点" << std::endl;
@@ -62,34 +65,49 @@ int main()
         node_ptr->traverse(simple_visitor);
     }
     
-    std::cout << "\n=== 通过路径注册节点 ===" << std::endl;
+    std::cout << "\n=== 通过路径注册节点(group001/cluster002/m2-7) ===" << std::endl;
     result_flag = registry.registerNodeAtPath("group001/cluster002/m2-7", std::make_shared<ResourceNode>("弹13", "m2-7"));
     if (result_flag)
     {
         std::cout << "注册成功" << std::endl;
-        node_ptr = registry.getNodeByPath("group001/cluster002/m2-7");
-        node_ptr->traverse(simple_visitor);
-    }
-    else
-    {
-        std::cout << "注册失败" << std::endl;
-    }
-    
-    std::cout << "\n=== 通过路径注册节点(错误) ===" << std::endl;
-    std::cout << "note: 前面路径必须存在节点" << std::endl;
-    result_flag = registry.registerNodeAtPath("group001/cluster003/m3-1", std::make_shared<ResourceNode>("弹14", "m3-1"));
-    if (result_flag)
-    {
-        std::cout << "注册成功" << std::endl;
-        node_ptr = registry.getNodeByPath("group001/cluster003/m3-1");
-        node_ptr->traverse(simple_visitor);
+        // node_ptr = registry.getNodeByPath("group001/cluster002/m2-7");
+        // node_ptr->traverse(simple_visitor);
+        registry.traverseRootNode(simple_visitor);
     }
     else
     {
         std::cout << "注册失败" << std::endl;
     }
 
-    std::cout << "\n=== 直接创建路径(不建议) ===" << std::endl;
+    std::cout << "\n=== 通过路径注册节点(错误路径 group001/cluster003/m3-1) ===" << std::endl;
+    std::cout << "note: 前面路径必须存在节点" << std::endl;
+    result_flag = registry.registerNodeAtPath("group001/cluster003/m3-1", std::make_shared<ResourceNode>("弹14", "m3-1"));
+    if (result_flag)
+    {
+        std::cout << "注册成功" << std::endl;
+        // node_ptr = registry.getNodeByPath("group001/cluster003/m3-1");
+        // node_ptr->traverse(simple_visitor);
+        registry.traverseRootNode(simple_visitor);
+    }
+    else
+    {
+        std::cout << "注册失败" << std::endl;
+    }
+
+    std::cout << "\n=== 通过路径删除节点(group001/cluster002/m2-7) ===" << std::endl;
+    result_flag = registry.removeNodeByPath("group001/cluster002/m2-7");
+    if (result_flag)
+    {
+        std::cout << "删除成功" << std::endl;
+        // node_ptr->traverse(simple_visitor);
+        registry.traverseRootNode(simple_visitor);
+    }
+    else
+    {
+        std::cout << "删除失败" << std::endl;
+    }
+
+    std::cout << "\n=== 直接创建路径(group001/cluster003/m3-1) ===" << std::endl;
     node_ptr = registry.createPath("group001/cluster003/m3-1");
     if (node_ptr)
     {

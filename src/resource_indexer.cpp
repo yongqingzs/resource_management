@@ -71,7 +71,76 @@ std::vector<std::shared_ptr<ResourceNode>> ResourceIndexer::findByMultiCondition
 }
 
 void ResourceIndexer::refreshIndex() {
+    // 构建基本索引
     buildIndices();
+    
+    // 重新构建所有属性索引
+    for (const auto& indexKey : indexedAttributes_) {
+        // 解析索引键以获取属性名和类型
+        size_t separatorPos = indexKey.find(':');
+        if (separatorPos != std::string::npos) {
+            std::string typeName = indexKey.substr(0, separatorPos);
+            std::string attrName = indexKey.substr(separatorPos + 1);
+            
+            // 清空当前索引
+            attributeIndices_[indexKey].clear();
+            
+            // 根据类型重新构建索引
+            if (typeName == typeid(int).name()) {
+                registry_.traverseNodes([&](std::shared_ptr<ResourceNode> node) {
+                    if (node->hasAttribute(attrName)) {
+                        try {
+                            int value = node->getAttribute<int>(attrName);
+                            std::string valueKey = serializeValue(value);
+                            attributeIndices_[indexKey][valueKey].push_back(node);
+                        } catch (...) {
+                            // 忽略类型不匹配的属性
+                        }
+                    }
+                });
+            }
+            else if (typeName == typeid(double).name()) {
+                registry_.traverseNodes([&](std::shared_ptr<ResourceNode> node) {
+                    if (node->hasAttribute(attrName)) {
+                        try {
+                            double value = node->getAttribute<double>(attrName);
+                            std::string valueKey = serializeValue(value);
+                            attributeIndices_[indexKey][valueKey].push_back(node);
+                        } catch (...) {
+                            // 忽略类型不匹配的属性
+                        }
+                    }
+                });
+            }
+            else if (typeName == typeid(std::string).name()) {
+                registry_.traverseNodes([&](std::shared_ptr<ResourceNode> node) {
+                    if (node->hasAttribute(attrName)) {
+                        try {
+                            std::string value = node->getAttribute<std::string>(attrName);
+                            std::string valueKey = serializeValue(value);
+                            attributeIndices_[indexKey][valueKey].push_back(node);
+                        } catch (...) {
+                            // 忽略类型不匹配的属性
+                        }
+                    }
+                });
+            }
+            else if (typeName == typeid(bool).name()) {
+                registry_.traverseNodes([&](std::shared_ptr<ResourceNode> node) {
+                    if (node->hasAttribute(attrName)) {
+                        try {
+                            bool value = node->getAttribute<bool>(attrName);
+                            std::string valueKey = serializeValue(value);
+                            attributeIndices_[indexKey][valueKey].push_back(node);
+                        } catch (...) {
+                            // 忽略类型不匹配的属性
+                        }
+                    }
+                });
+            }
+            // 可以根据需要添加更多类型的处理
+        }
+    }
 }
 
 void ResourceIndexer::buildIndices() {

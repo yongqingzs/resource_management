@@ -42,3 +42,5 @@ add_executable(test_ResourceNode test/test_ResourceNode.cpp ${LIB_SOURCES})
 add_executable(test_ResourceRegistry test/test_ResourceRegistry.cpp ${LIB_SOURCES})
 
 add_executable(test_ResourceIndexer test/test_ResourceIndexer.cpp ${LIB_SOURCES})
+
+add_executable(test_Indexed test/test_Indexed.cpp ${LIB_SOURCES})

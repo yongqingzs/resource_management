@@ -4,6 +4,10 @@
 #include <chrono>
 #include <unordered_set>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 using namespace resource;
 using namespace std::chrono;
 
@@ -61,6 +65,9 @@ long long measureTime(Func func) {
 }
 
 int main() {
+#ifdef _WIN32
+    SetConsoleOutputCP(CP_UTF8);
+#endif
     // 创建资源注册表和索引器
     ResourceRegistry registry;
     ResourceIndexer indexer(registry);

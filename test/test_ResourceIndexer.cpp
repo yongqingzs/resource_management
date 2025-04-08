@@ -1,5 +1,9 @@
 #include "resource_api.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 using namespace resource;
 
 // 自定义打印函数，用于展示查询结果
@@ -40,6 +44,9 @@ void printSearchResults(const std::string& queryTitle, const std::vector<std::sh
 }
 
 int main() {
+#ifdef _WIN32
+    SetConsoleOutputCP(CP_UTF8);
+#endif
     // 创建资源注册表和索引器
     ResourceRegistry registry;
     ResourceIndexer indexer(registry);

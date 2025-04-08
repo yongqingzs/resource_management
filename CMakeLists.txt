@@ -11,6 +11,27 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
 endif()
 
+if(MSVC)
+  # 为MSVC编译器添加UTF-8编码支持
+  add_compile_options(/utf-8)
+
+  # 警告级别和错误处理
+  add_compile_options(/W4)       # 设置警告级别为4 (类似于-Wall -Wextra)
+  add_compile_options(/WX)       # 将警告视为错误 (类似于-Werror)
+  add_compile_options(/permissive-) # 增强的标准符合性
+  
+  # 调试信息设置
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Zi /Od /RTC1") # 完整调试信息
+  
+  # 优化设置
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2 /Ob2 /GL") # 最大优化
+  
+  # 运行时库
+  # 多线程动态库 (/MD 和 /MDd) 是默认值，可以明确设置
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
+endif()
+
 # 设置编译选项
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")

@@ -1,9 +1,16 @@
 #include "resource_api.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 using namespace resource;
 
 int main()
 {
+#ifdef _WIN32
+    SetConsoleOutputCP(CP_UTF8);
+#endif
     auto group1 = std::make_shared<ResourceNode>("弹群1", "group001");
     group1->setAttribute("类型", std::string("演示用混合弹群"));
     auto cluster1 = std::make_shared<ResourceNode>("弹簇1", "cluster001");

@@ -6,39 +6,19 @@ namespace resource {
 
 ResourceRegistry::ResourceRegistry() {}
 
-void ResourceRegistry::registerRootNode(std::shared_ptr<ResourceNode> root) {
+bool ResourceRegistry::registerRootNode(std::shared_ptr<ResourceNode> root) {
     if (!root) {
         throw std::invalid_argument("Cannot register null root node");
+        return false;
     }
     
     if (rootNodes_.find(root->getId()) != rootNodes_.end()) {
         throw std::invalid_argument("Root node with ID " + root->getId() + " already registered");
+        return false;
     }
     
     rootNodes_[root->getId()] = root;
-}
-
-void ResourceRegistry::unregisterRootNode(const std::string& rootId) {
-    rootNodes_.erase(rootId);
-}
-
-std::shared_ptr<ResourceNode> ResourceRegistry::getRootNode(const std::string& rootId) const {
-    auto it = rootNodes_.find(rootId);
-    if (it != rootNodes_.end()) {
-        return it->second;
-    }
-    return nullptr;
-}
-
-std::vector<std::shared_ptr<ResourceNode>> ResourceRegistry::getAllRootNodes() const {
-    std::vector<std::shared_ptr<ResourceNode>> result;
-    result.reserve(rootNodes_.size());
-    
-    for (const auto& pair : rootNodes_) {
-        result.push_back(pair.second);
-    }
-    
-    return result;
+    return true;
 }
 
 std::vector<std::string> ResourceRegistry::splitPath(const std::string& path) const {
@@ -200,6 +180,85 @@ void ResourceRegistry::traverseNodes(const std::function<void(std::shared_ptr<Re
     // 从所有根节点开始遍历
     for (const auto& pair : rootNodes_) {
         traverse(pair.second);
+    }
+}
+
+bool ResourceRegistry::updateNode(std::shared_ptr<ResourceNode> node, 
+    const void* objPtr,
+    std::shared_ptr<const StructConverter> converter) {
+    if (!node || !objPtr || !converter) return false;
+
+    // 创建临时节点以获取最新属性
+    auto tempNode = converter->convert(objPtr, node->getName());
+    if (!tempNode) return false;
+
+    // 更新当前节点的属性
+    updateNodeAttributes(node, tempNode);
+
+    return true;
+}
+
+bool ResourceRegistry::removeDynamicObject(std::shared_ptr<ResourceNode> node) {
+    auto it = std::find_if(dynamicObjects_.begin(), dynamicObjects_.end(),
+        [&node](const auto& item) {
+            return std::get<3>(item) == node;
+        });
+    
+    if (it != dynamicObjects_.end()) {
+        dynamicObjects_.erase(it);
+        return true;
+    }
+    return false;
+}
+
+void ResourceRegistry::updateNodeAttributes(std::shared_ptr<ResourceNode> target, 
+                            std::shared_ptr<ResourceNode> source) {
+    // 1. 更新所有属性
+    auto& sourceAttrs = source->getAttributes();
+    for (const auto& attr : sourceAttrs) {
+        target->updateAttributeRaw(std::get<0>(attr), std::get<1>(attr)->clone());  // key, value
+    }
+    
+    // 2. 处理子节点
+    const auto& sourceChildren = source->getChildren();
+    const auto& targetChildren = target->getChildren();
+    
+    // 查找匹配的子节点并更新
+    for (const auto& sourceChild : sourceChildren) {
+        bool found = false;
+        for (const auto& targetChild : targetChildren) {
+            if (targetChild->getId() == sourceChild->getId()) {
+                // 递归更新子节点
+                updateNodeAttributes(targetChild, sourceChild);
+                found = true;
+                break;
+            }
+        }
+        
+        // 如果没找到匹配的子节点，添加新节点
+        if (!found) {
+            target->addChild(sourceChild->clone());
+        }
+    }
+    
+    // 3. 删除已不存在的子节点
+    std::vector<std::string> childrenToRemove;
+    for (const auto& targetChild : targetChildren) {
+        bool found = false;
+        for (const auto& sourceChild : sourceChildren) {
+            if (targetChild->getId() == sourceChild->getId()) {
+                found = true;
+                break;
+            }
+        }
+        
+        if (!found) {
+            childrenToRemove.push_back(targetChild->getId());
+        }
+    }
+    
+    for (const auto& childId : childrenToRemove) {
+        target->removeChild(childId);
     }
 }
 

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 project(resource_management VERSION 1.0.0 LANGUAGES CXX)
 
 # 设置 C++11 标准
@@ -42,13 +42,6 @@ endif()
 # 包含头文件目录
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-set(SOURCES
-  src/main.cpp
-  src/resource_indexer.cpp
-  src/resource_node.cpp
-  src/resource_registry.cpp
-)
-
 set(LIB_SOURCES
   src/resource_indexer.cpp
   src/resource_node.cpp
@@ -56,8 +49,6 @@ set(LIB_SOURCES
 )
 
 # 创建主可执行文件
-add_executable(resource_demo ${SOURCES})
-
 add_executable(test_ResourceNode test/test_ResourceNode.cpp ${LIB_SOURCES})
 
 add_executable(test_ResourceRegistry test/test_ResourceRegistry.cpp ${LIB_SOURCES})
@@ -65,3 +56,5 @@ add_executable(test_ResourceRegistry test/test_ResourceRegistry.cpp ${LIB_SOURCE
 add_executable(test_ResourceIndexer test/test_ResourceIndexer.cpp ${LIB_SOURCES})
 
 add_executable(test_Indexed test/test_Indexed.cpp ${LIB_SOURCES})
+
+add_executable(test_Struct test/test_Struct.cpp ${LIB_SOURCES})

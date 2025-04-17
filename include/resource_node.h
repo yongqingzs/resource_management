@@ -43,19 +43,30 @@ private:
 // 通用资源节点类 - 继承自enable_shared_from_this以支持shared_from_this()
 class ResourceNode : public std::enable_shared_from_this<ResourceNode> {
 public:
-    ResourceNode(const std::string& name, const std::string& id);
-    virtual ~ResourceNode();
+    ResourceNode(const std::string& name, const std::string& id) : name_(name), id_(id) {}
+    ~ResourceNode() = default;
 
     // 节点基本属性
-    const std::string& getName() const;
-    const std::string& getId() const;
-    void setName(const std::string& name);
+    const std::string& getName() const { return name_; }
+    const std::string& getId() const { return id_; }
+    void setName(const std::string& name) { name_ = name; }
     
     // 子节点管理
     void addChild(std::shared_ptr<ResourceNode> child);
+
     void removeChild(const std::string& id);
-    std::shared_ptr<ResourceNode> getChild(const std::string& id) const;
-    const std::vector<std::shared_ptr<ResourceNode>>& getChildren() const;
+
+    std::shared_ptr<ResourceNode> getChild(const std::string& id) const {
+        auto it = childMap_.find(id);
+        if (it != childMap_.end()) {
+            return it->second;
+        }
+        return nullptr;
+    }
+
+    const std::vector<std::shared_ptr<ResourceNode>>& getChildren() const {
+        return children_;
+    }
     
     // 属性管理 - 允许节点存储任意类型的属性
     template<typename T>
@@ -99,13 +110,9 @@ public:
         throw std::runtime_error("Attribute not found: " + key);
     }
     
-    bool hasAttribute(const std::string& key) const {
-        return attributes_.find(key) != attributes_.end();
-    }
+    bool hasAttribute(const std::string& key) const { return attributes_.find(key) != attributes_.end(); }
     
-    void removeAttribute(const std::string& key) {
-        attributes_.erase(key);
-    }
+    void removeAttribute(const std::string& key) { attributes_.erase(key); }
     
     std::vector<std::string> getAttributeKeys() const {
         std::vector<std::string> keys;
@@ -125,13 +132,23 @@ public:
     }
     
     // 节点类型标识
-    virtual std::string getType() const;
+    virtual std::string getType() const { return "ResourceNode"; };
     
     // 复制节点（不复制子节点）
     std::shared_ptr<ResourceNode> clone() const;
     
     // 深度遍历节点
     void traverse(const std::function<void(const std::shared_ptr<ResourceNode>&, int depth)>& visitor, int depth = 0) const;
+    
+    // 添加原始属性更新方法
+    void updateAttributeRaw(const std::string& key, std::unique_ptr<AttributeValue> value) {
+        attributes_[key] = std::move(value);
+    }
+    
+    // 获取属性映射（用于更新）
+    const std::unordered_map<std::string, std::unique_ptr<AttributeValue>>& getAttributes() const {
+        return attributes_;
+    }
 
 private:
     std::string name_;

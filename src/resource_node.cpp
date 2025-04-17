@@ -4,23 +4,6 @@
 
 namespace resource {
 
-ResourceNode::ResourceNode(const std::string& name, const std::string& id)
-    : name_(name), id_(id) {}
-
-ResourceNode::~ResourceNode() = default;
-
-const std::string& ResourceNode::getName() const {
-    return name_;
-}
-
-const std::string& ResourceNode::getId() const {
-    return id_;
-}
-
-void ResourceNode::setName(const std::string& name) {
-    name_ = name;
-}
-
 void ResourceNode::addChild(std::shared_ptr<ResourceNode> child) {
     if (!child) {
         throw std::invalid_argument("Cannot add null child");
@@ -55,31 +38,21 @@ void ResourceNode::removeChild(const std::string& id) {
     childMap_.erase(it);
 }
 
-std::shared_ptr<ResourceNode> ResourceNode::getChild(const std::string& id) const {
-    auto it = childMap_.find(id);
-    if (it != childMap_.end()) {
-        return it->second;
-    }
-    return nullptr;
-}
-
-const std::vector<std::shared_ptr<ResourceNode>>& ResourceNode::getChildren() const {
-    return children_;
-}
-
-std::string ResourceNode::getType() const {
-    return "ResourceNode";
-}
-
+// 添加克隆方法
 std::shared_ptr<ResourceNode> ResourceNode::clone() const {
-    auto node = std::make_shared<ResourceNode>(name_, id_);
+    auto copy = std::make_shared<ResourceNode>(name_, id_);
     
     // 复制属性
-    for (const auto& pair : attributes_) {
-        node->attributes_[pair.first] = pair.second->clone();
+    for (const auto& attr : attributes_) {
+        copy->attributes_[attr.first] = attr.second->clone();
     }
     
-    return node;
+    // 递归复制子节点
+    for (const auto& child : children_) {
+        copy->addChild(child->clone());
+    }
+    
+    return copy;
 }
 
 void ResourceNode::traverse(const std::function<void(const std::shared_ptr<ResourceNode>&, int depth)>& visitor, int depth) const {
@@ -105,7 +78,7 @@ void simple_visitor(const std::shared_ptr<ResourceNode>& node, int depth) {
     auto keys = node->getAttributeKeys();
     if (!keys.empty()) {
         std::string attrIndent(depth * 2 + 2, ' ');
-        std::cout << attrIndent << "属性:" << std::endl;
+        std::cout << attrIndent << "attr:" << std::endl;
         for (const auto& key : keys) {
             std::cout << attrIndent << "  " << key << ": ";
             
@@ -124,10 +97,10 @@ void simple_visitor(const std::shared_ptr<ResourceNode>& node, int depth) {
                     std::cout << (node->getAttribute<bool>(key) ? "true" : "false");
                 }
                 else {
-                    std::cout << "[复杂类型]";
+                    std::cout << "[complex type]";
                 }
             } catch (...) {
-                std::cout << "[错误:无法读取]";
+                std::cout << "[error:can't read attribute]";
             }
             std::cout << std::endl;
         }

@@ -135,6 +135,49 @@ public:
 
     // 移除特定节点的动态跟踪
     bool removeDynamicObject(std::shared_ptr<ResourceNode> node);
+    
+    template<typename T>
+    bool updateAttribute(
+        std::shared_ptr<ResourceNode> node, 
+        const std::string& path, 
+        const T& value)
+    {
+        if (!node) return false;
+        
+        auto parts = splitPath(path);
+        auto currentNode = node;
+        
+        // 导航到目标节点
+        for (size_t i = 0; i < parts.size() - 1; ++i) {
+            currentNode = currentNode->getChild(parts[i]);
+            if (!currentNode) return false;
+        }
+        
+        // 设置最终属性
+        if (!parts.empty()) {
+            currentNode->setAttribute(parts.back(), value);
+            return true;
+        }
+        return false;
+    }
+
+    // 递归终止函数 - 处理空参数情况
+    bool batchUpdateAttributes(std::shared_ptr<ResourceNode> node) 
+    {
+        return node != nullptr;
+    }
+
+    // 变长模板参数实现的批量更新
+    template<typename T, typename... Args>
+    bool batchUpdateAttributes(
+        std::shared_ptr<ResourceNode> node,
+        const std::string& path, 
+        const T& value, 
+        Args&&... args)
+    {
+        bool result = updateAttribute(node, path, value);
+        return result && batchUpdateAttributes(node, std::forward<Args>(args)...);
+    }
 
     // 清空注册表
     void clear();

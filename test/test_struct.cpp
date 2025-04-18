@@ -12,7 +12,7 @@
 3. 导弹群号
 4. 导弹角色（是否领弹）
 5. 经度
-6. 维度
+6. 纬度
 7. 高度
 
 (能力模型层)
@@ -121,7 +121,7 @@ struct AgentModel {
     std::string groupId = "G001";         // 导弹群号
     bool isLeader = false;                // 导弹角色（是否领弹）
     double longitude = 116.3;             // 经度
-    double latitude = 39.9;               // 维度
+    double latitude = 39.9;               // 纬度
     double altitude = 5000.0;             // 高度
     
     // 能力模型层
@@ -205,7 +205,6 @@ public:
     }
 };
 
-// 示例用法
 int main()
 {
 #ifdef _WIN32
@@ -221,11 +220,11 @@ int main()
     
     auto node = registry.registerDynamicStruct(agent1, "", converter, "missile1");
 
-    std::cout << "\n==========Init==========" << std::endl;
     registry.traverseRootNode(resource::simple_visitor);
 
-    // 模拟循环更新
-    for (int i = 0; i < 10; i++) {
+    int count = 1000;
+
+    auto dynamic_func = [&]() {for (int i = 0; i < count; i++) {
         // 更新结构体
         agent1.longitude += 0.1;
         agent1.latitude += 0.05;
@@ -235,16 +234,93 @@ int main()
         registry.updateAllDynamicObjects();
         
         // 打印更新后的位置
-        std::cout << "==========Update==========" << std::endl;
-        std::cout << "周期 " << i << ": 经度=" << node->getAttribute<double>("longitude")
-                  << ", 纬度=" << node->getAttribute<double>("latitude")
-                  << ", 高度=" << node->getAttribute<double>("altitude") << std::endl;
+        // std::cout << "周期 " << i << ": 经度=" << node->getAttribute<double>("longitude")
+        //           << ", 纬度=" << node->getAttribute<double>("latitude")
+        //           << ", 高度=" << node->getAttribute<double>("altitude") << std::endl;
 
         // std::cout << "\n==========Update==========" << std::endl;
         // registry.traverseRootNode(resource::simple_visitor);
         
         // 模拟时间间隔
         // std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    }
+    }};
+
+    auto increment_func = [&]() {for (int i = 0; i < count; i++) {
+        // 更新结构体
+        agent1.longitude += 0.1;
+        agent1.latitude += 0.05;
+        agent1.altitude += 10.0;
+        
+        // 更新资源树
+#if 1
+        registry.batchUpdateAttributes(
+            node,
+            "longitude", agent1.longitude,
+            "latitude", agent1.latitude,
+            "altitude", agent1.altitude,
+            "maneuver.turningRadius", agent1.maneuverCapability.turningRadius
+        );
+#endif
+
+#if 0
+        registry.batchUpdateAttributes(
+            node,
+            // 基本属性
+            "missileType", agent1.missileType,
+            "missileId", agent1.missileId,
+            "groupId", agent1.groupId,
+            "isLeader", agent1.isLeader,
+            "longitude", agent1.longitude,
+            "latitude", agent1.latitude,
+            "altitude", agent1.altitude,
+            
+            // 机动能力属性
+            "maneuver.maxRange", agent1.maneuverCapability.maxRange,
+            "maneuver.speed", agent1.maneuverCapability.speed,
+            "maneuver.flightAltitude", agent1.maneuverCapability.flightAltitude,
+            "maneuver.climbRate", agent1.maneuverCapability.climbRate,
+            "maneuver.turningRadius", agent1.maneuverCapability.turningRadius,
+            "maneuver.maxTangentialAccel", agent1.maneuverCapability.maxTangentialAccel,
+            "maneuver.maxNormalAccel", agent1.maneuverCapability.maxNormalAccel,
+            
+            // 毁伤能力属性
+            "damage.warhead.quantity", agent1.damageCapability.warhead.quantity,
+            "damage.warhead.tntEquivalent", agent1.damageCapability.warhead.tntEquivalent,
+            "damage.warhead.damageRadius", agent1.damageCapability.warhead.damageRadius,
+            
+            // 感知能力 - 光学传感器属性
+            "perception.optical.spectrumBand", agent1.perceptionCapability.opticalSensor.spectrumBand,
+            "perception.optical.detectionRange", agent1.perceptionCapability.opticalSensor.detectionRange,
+            "perception.optical.pitchRange", agent1.perceptionCapability.opticalSensor.pitchRange,
+            
+            // 感知能力 - 射频传感器属性
+            "perception.rf.spectrumBand", agent1.perceptionCapability.rfSensor.spectrumBand,
+            "perception.rf.detectionRange", agent1.perceptionCapability.rfSensor.detectionRange,
+            "perception.rf.headingRange", agent1.perceptionCapability.rfSensor.headingRange,
+            
+            // 对抗能力属性
+            "countermeasure.countermeasureBands", agent1.countermeasureCapability.countermeasureBands,
+            "countermeasure.maxTargets", agent1.countermeasureCapability.maxTargets
+        );
+#endif
+
+        // 打印更新后的位置
+        // std::cout << "周期 " << i << ": 经度=" << node->getAttribute<double>("longitude")
+        //           << ", 纬度=" << node->getAttribute<double>("latitude")
+        //           << ", 高度=" << node->getAttribute<double>("altitude") << std::endl;
+
+        // std::cout << "\n==========Update==========" << std::endl;
+        // registry.traverseRootNode(resource::simple_visitor);
+        
+        // 模拟时间间隔
+        // std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    }};
+
+    std::cout << "\n==========Dynamic Update==========" << std::endl;
+    long long normalTime1 = measureTime(dynamic_func);
+    std::cout << "动态更新耗时: " << normalTime1 / 1000 << " ms" << std::endl;
+    std::cout << "\n==========Increment Update==========" << std::endl;
+    long long normalTime2 = measureTime(increment_func);
+    std::cout << "增量更新耗时: " << normalTime2 / 1000 << " ms" << std::endl;
     return 0;
 }

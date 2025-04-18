@@ -55,15 +55,6 @@ void printResults(const std::string& queryTitle, const std::vector<std::shared_p
     }
 }
 
-// 计时函数模板，用于比较性能
-template<typename Func>
-long long measureTime(Func func) {
-    auto start = high_resolution_clock::now();
-    func();
-    auto end = high_resolution_clock::now();
-    return duration_cast<microseconds>(end - start).count();
-}
-
 int main() {
 #ifdef _WIN32
     SetConsoleOutputCP(CP_UTF8);
